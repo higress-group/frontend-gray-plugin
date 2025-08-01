@@ -52,14 +52,18 @@ static_resources:
                                 "uniqueGrayTag": "uuid",
                                 "rules": [
                                   {
-                                    "name": "inner-user",
-                                    "grayKeyValue": [
-                                      "00000001",
-                                      "00000005"
-                                    ]
+                                    "name": "inner-user"
                                   },
                                   {
                                     "name": "beta-user",
+                                    "grayTagKey": "level",
+                                    "grayTagValue": [
+                                      "level3",
+                                      "level5"
+                                    ]
+                                  },
+                                  {
+                                    "name": "inner-user1",
                                     "grayKeyValue": [
                                       "noah",
                                       "00000003"
@@ -72,9 +76,9 @@ static_resources:
                                   }
                                 ],
                                 "rewrite": {
-                                  "host": "apig-oss-integration.oss-cn-hangzhou.aliyuncs.com",
+                                  "host": "static.chagee.com",
                                   "indexRouting": {
-                                    "/": "/mfe/{version}/index.html"
+                                    "/": "/mfe/chagee-iot-operation/{version}/index.html"
                                   },
                                   "fileRouting": {
                                     "/": "/mfe/{version}",
@@ -89,18 +93,28 @@ static_resources:
                                   "/mfe/**/mf-manifest-main.json"
                                 ],
                                 "baseDeployment": {
-                                  "version": "v1"
+                                  "version": "test"
                                 },
                                 "grayDeployments": [
                                   {
-                                    "weight": 90,
-                                    "name": "beta-user",
-                                    "version": "v2",
+                                    "weight": 30,
+                                    "name": "inner-user",
+                                    "version": "uat",
                                     "enabled": true,
-                                    "backendVersion":"gray",
-                                    "versionPredicates": {
-                                      "/mfe": "v1"
-                                    }
+                                    "backendVersion":"gray1"
+                                  },
+                                  {
+                                    "weight": 30,
+                                    "name": "beta-user",
+                                    "version": "prod",
+                                    "enabled": true,
+                                    "backendVersion":"gray2"
+                                  },
+                                  {
+                                    "name": "inner-user1",
+                                    "version": "uat",
+                                    "enabled": true,
+                                    "backendVersion":"gray3"
                                   }
                                 ],
                                 "injection": {
@@ -141,5 +155,5 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: apig-oss-integration.oss-cn-hangzhou.aliyuncs.com
+                      address: static.chagee.com
                       port_value: 80
