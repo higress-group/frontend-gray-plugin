@@ -72,18 +72,20 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, grayConfig config.GrayConfig)
 	_ = proxywasm.RemoveHttpRequestHeader("Content-Length")
 	deployment := &config.Deployment{}
 
-	  // 处理cookie首次加载为空的情况
-    var effectiveCookie string
-    if cookie == "" {
-        uniqueId, isUniqueIdOk := ctx.GetContext(grayConfig.UniqueGrayTag).(string)
-        if isUniqueIdOk {
-            // 构造一个包含 uniqueId 的虚拟 cookie
-            effectiveCookie = fmt.Sprintf("%s=%s", grayConfig.UniqueGrayTag, uniqueId)
-        }
-    } else {
-        effectiveCookie = cookie
-    }
-
+  	// 处理cookie首次加载为空的情况
+  effectiveCookie := cookie
+  // 检查cookie中是否缺少目标标签值
+  if util.GetCookieValue(cookie, grayConfig.UniqueGrayTag) == "" {
+      // 使用类型断言的简写形式
+      if uniqueId, ok := ctx.GetContext(grayConfig.UniqueGrayTag).(string); ok {
+          // 简化分隔符逻辑
+          if cookie == "" {
+              effectiveCookie = fmt.Sprintf("%s=%s", grayConfig.UniqueGrayTag, uniqueId)
+          } else {
+              effectiveCookie = fmt.Sprintf("%s; %s=%s", cookie, grayConfig.UniqueGrayTag, uniqueId)
+          }
+      }
+  }
 	log.Infof("effectiveCookie: %s", effectiveCookie)
 
 	globalConfig := grayConfig.Injection.GlobalConfig
