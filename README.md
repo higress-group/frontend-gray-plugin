@@ -75,8 +75,8 @@ description: 前端灰度插件配置参考
 | `enabled`  | boolean   | 必填   | -   | 是否启动当前灰度规则                                      |
 | `weight`  | int   | 非必填   | -   | 按照比例灰度，比如50。 |
 >按照比例灰度注意下面几点:
-> 1. 如果同时配置了`按用户灰度`以及`按比例灰度`，按`比例灰度`优先生效
-> 2. 采用客户端设备标识符的哈希摘要机制实现流量比例控制，其唯一性判定逻辑遵循以下原则：自动生成全局唯一标识符（UUID）作为设备指纹，可以通过`uniqueGrayTag`配置`cookie`的key值，并通过SHA-256哈希算法生成对应灰度判定基准值。
+> 1. 如果同一个规则同时配置了`按用户灰度`以及`按比例灰度`，按`比例灰度`优先生效
+> 2. 采用客户端设备标识符的哈希摘要机制实现流量比例控制，其唯一性判定逻辑遵循以下原则：自动生成全局唯一标识符（UUID）作为设备指纹，可以通过`uniqueGrayTag`配置`cookie`的key值，并通过SHA-256哈希算法生成对应灰度判定基准值。如果规则中配置了`grayTagKey`，则会优先根据`grayTagKey`的值进行比例灰度判定。
 
 
 `injection`字段配置说明：
@@ -148,7 +148,7 @@ rules:
 baseDeployment:
   version: base
 grayDeployments:
-  - name: beta-user
+  - name: inner-user
     version: gray
     enabled: true
     weight: 80

@@ -195,9 +195,8 @@ func JsonToGrayConfig(json gjson.Result, grayConfig *GrayConfig) error {
 			Weight:            weight,
 			VersionPredicates: convertToStringMap(item.Get("versionPredicates")),
 		})
-		if weight > 0 {
+		if weight > 0 && grayConfig.GrayWeight == 0 {
 			grayConfig.GrayWeight = weight
-			break
 		}
 	}
 

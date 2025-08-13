@@ -9,12 +9,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/alibaba/higress/plugins/wasm-go/extensions/frontend-gray/config"
+	"github.com/alibaba/higress/plugins/wasm-go/pkg/log"
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/google/uuid"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
-
-	"github.com/alibaba/higress/plugins/wasm-go/extensions/frontend-gray/config"
-
 	"github.com/tidwall/gjson"
 )
 
@@ -314,37 +313,64 @@ func GetGrayWeightUniqueId(cookie string, uniqueGrayTag string) string {
 	return uniqueId
 }
 
-// FilterGrayRule 过滤灰度规则
-func FilterGrayRule(grayConfig *config.GrayConfig, grayKeyValue string, cookie string) *config.Deployment {
-	if grayConfig.GrayWeight > 0 {
-		uniqueId := GetGrayWeightUniqueId(cookie, grayConfig.UniqueGrayTag)
-		// 计算哈希后取模
-		mod := crc32.ChecksumIEEE([]byte(uniqueId)) % 100
-		isGray := mod < uint32(grayConfig.GrayWeight)
-		if isGray {
-			for _, deployment := range grayConfig.GrayDeployments {
-				if deployment.Enabled && deployment.Weight > 0 {
-					return deployment
-				}
-			}
-		}
-		return grayConfig.BaseDeployment
+// checkPercentageGray 检查是否命中百分比灰度
+func checkPercentageGray(grayRule *config.GrayRule, deployment *config.Deployment, cookie string, grayConfig *config.GrayConfig) bool {
+	var uniqueId string
+	if grayRule.GrayTagKey != "" {
+		uniqueId = GetCookieValue(cookie, grayRule.GrayTagKey)
+	} else {
+		uniqueId = GetGrayWeightUniqueId(cookie, grayConfig.UniqueGrayTag)
+	}
+	log.Infof("uniqueId: %s, cookie: %s", uniqueId, cookie)
+
+	// 处理 uniqueId 为空的情况
+	if uniqueId == "" {
+		return false
 	}
 
+	mod := crc32.ChecksumIEEE([]byte(uniqueId)) % 100
+	isGray := mod < uint32(deployment.Weight)
+	return isGray
+}
+
+// checkGrayKeyGray 检查grayKey 是否符合灰度规则
+func checkGrayKeyGray(grayRule *config.GrayRule, grayKeyValue string) bool {
+	if grayRule.GrayKeyValue != nil && len(grayRule.GrayKeyValue) > 0 && grayKeyValue != "" {
+		return ContainsValue(grayRule.GrayKeyValue, grayKeyValue)
+	}
+	return false
+}
+
+// checkCookieTagGray 检查 Cookie 标签是否符合灰度规则
+func checkCookieTagGray(grayRule *config.GrayRule, cookie string) bool {
+	if grayRule.GrayTagKey != "" && grayRule.GrayTagValue != nil && len(grayRule.GrayTagValue) > 0 {
+		grayTagValue := GetCookieValue(cookie, grayRule.GrayTagKey)
+		return ContainsValue(grayRule.GrayTagValue, grayTagValue)
+	}
+	return false
+}
+
+// FilterGrayRule 过滤灰度规则，根据百分比、grayKey 和 Cookie 标签筛选符合条件的灰度部署
+func FilterGrayRule(grayConfig *config.GrayConfig, grayKeyValue string, cookie string) *config.Deployment {
 	for _, deployment := range grayConfig.GrayDeployments {
 		grayRule := GetRule(grayConfig.Rules, deployment.Name)
-		// 首先：先校验用户名单ID
-		if grayRule.GrayKeyValue != nil && len(grayRule.GrayKeyValue) > 0 && grayKeyValue != "" {
-			if ContainsValue(grayRule.GrayKeyValue, grayKeyValue) {
+
+		// 百分比灰度判断
+		if deployment.Weight > 0  {
+			if checkPercentageGray(grayRule, deployment, cookie, grayConfig) {
 				return deployment
 			}
+			continue;
 		}
-		//	第二：校验Cookie中的 GrayTagKey
-		if grayRule.GrayTagKey != "" && grayRule.GrayTagValue != nil && len(grayRule.GrayTagValue) > 0 {
-			grayTagValue := GetCookieValue(cookie, grayRule.GrayTagKey)
-			if ContainsValue(grayRule.GrayTagValue, grayTagValue) {
-				return deployment
-			}
+
+		// grayKey 灰度判断
+		if checkGrayKeyGray(grayRule, grayKeyValue) {
+			return deployment
+		}
+
+		// Cookie 标签灰度判断
+		if checkCookieTagGray(grayRule, cookie) {
+			return deployment
 		}
 	}
 	return grayConfig.BaseDeployment
