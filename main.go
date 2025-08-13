@@ -72,25 +72,41 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, grayConfig config.GrayConfig)
 	_ = proxywasm.RemoveHttpRequestHeader("Content-Length")
 	deployment := &config.Deployment{}
 
+  	// 处理cookie首次加载为空的情况
+  effectiveCookie := cookie
+  // 检查cookie中是否缺少目标标签值
+  if util.GetCookieValue(cookie, grayConfig.UniqueGrayTag) == "" {
+      // 使用类型断言的简写形式
+      if uniqueId, ok := ctx.GetContext(grayConfig.UniqueGrayTag).(string); ok {
+          // 简化分隔符逻辑
+          if cookie == "" {
+              effectiveCookie = fmt.Sprintf("%s=%s", grayConfig.UniqueGrayTag, uniqueId)
+          } else {
+              effectiveCookie = fmt.Sprintf("%s; %s=%s", cookie, grayConfig.UniqueGrayTag, uniqueId)
+          }
+      }
+  }
+	log.Infof("effectiveCookie: %s", effectiveCookie)
+
 	globalConfig := grayConfig.Injection.GlobalConfig
 	if globalConfig.Enabled {
-		conditionRule := util.GetConditionRules(grayConfig.Rules, grayKeyValue, cookie)
+		conditionRule := util.GetConditionRules(grayConfig.Rules, grayKeyValue, effectiveCookie)
 		trimmedValue := strings.TrimSuffix(strings.TrimPrefix(strings.TrimSpace(globalConfig.Value), "{"), "}")
 		ctx.SetContext(globalConfig.Key, fmt.Sprintf("<script>var %s = {\n%s:%s,\n %s \n}\n</script>", globalConfig.Key, globalConfig.FeatureKey, conditionRule, trimmedValue))
 	}
 
 	if isHtmlRequest {
 		// index首页请求每次都会进度灰度规则判断
-		deployment = util.FilterGrayRule(&grayConfig, grayKeyValue, cookie)
+		deployment = util.FilterGrayRule(&grayConfig, grayKeyValue, effectiveCookie)
 		log.Infof("route: %s, index html request: %v, backend: %v, xPreHigressVersion: %s", route, requestPath, deployment.BackendVersion, frontendVersion)
 		ctx.SetContext(config.PreHigressVersion, deployment.Version)
 		ctx.SetContext(grayConfig.BackendGrayTag, deployment.BackendVersion)
 	} else {
 		if util.IsSupportMultiVersion(grayConfig) {
-			deployment = util.FilterMultiVersionGrayRule(&grayConfig, grayKeyValue, cookie, requestPath)
+			deployment = util.FilterMultiVersionGrayRule(&grayConfig, grayKeyValue, effectiveCookie, requestPath)
 			log.Infof("route: %s, multi version %v", route, deployment)
 		} else {
-			grayDeployment := util.FilterGrayRule(&grayConfig, grayKeyValue, cookie)
+			grayDeployment := util.FilterGrayRule(&grayConfig, grayKeyValue, effectiveCookie)
 			if isIndexRequest {
 				deployment = grayDeployment
 			} else {
@@ -180,7 +196,7 @@ func onHttpResponseHeader(ctx wrapper.HttpContext, grayConfig config.GrayConfig)
 	proxywasm.ReplaceHttpResponseHeader("cache-control", "no-cache, no-store, max-age=0, must-revalidate")
 
 	// 构建Cookie属性
-	cookieAttributes := fmt.Sprintf("Max-Age=%d; Path=/; HttpOnly; Secure", grayConfig.StoreMaxAge)
+	cookieAttributes := fmt.Sprintf("Max-Age=%d; Path=/; Secure", grayConfig.StoreMaxAge)
 	if grayConfig.CookieDomain != "" {
 		cookieAttributes += fmt.Sprintf("; Domain=%s", grayConfig.CookieDomain)
 	}
@@ -203,7 +219,7 @@ func onHttpResponseHeader(ctx wrapper.HttpContext, grayConfig config.GrayConfig)
 		if isBackVersionOk {
 			if backendVersion == "" {
 				// 删除后端灰度版本
-				expireCookieAttr := "Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; HttpOnly; Secure"
+				expireCookieAttr := "Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Secure"
 				if grayConfig.CookieDomain != "" {
 					expireCookieAttr += fmt.Sprintf("; Domain=%s", grayConfig.CookieDomain)
 				}
