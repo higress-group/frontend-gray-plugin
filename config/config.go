@@ -143,8 +143,8 @@ func JsonToGrayConfig(json gjson.Result, grayConfig *GrayConfig) error {
 	// 判断 uniqueGrayTag 是否被配置
 	grayConfig.UniqueGrayTagConfigured = json.Get("uniqueGrayTag").Exists()
 	grayConfig.StoreMaxAge = 60 * 60 * 24 * 365 // 默认一年
-	storeMaxAge, err := strconv.Atoi(GetWithDefault(json, "StoreMaxAge", strconv.Itoa(grayConfig.StoreMaxAge)))
-	if err != nil {
+	storeMaxAge, err := strconv.Atoi(GetWithDefault(json, "storeMaxAge", strconv.Itoa(grayConfig.StoreMaxAge)))
+	if err == nil {
 		grayConfig.StoreMaxAge = storeMaxAge
 	}
 	
