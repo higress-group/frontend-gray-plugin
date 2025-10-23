@@ -27,7 +27,7 @@ description: 前端灰度插件配置参考
 | `skippedByHeaders` | map of string to string   | 非必填  | -   | 用于通过请求头过滤，指定哪些请求不被当前插件
 处理。`skippedPaths` 的优先级高于当前配置，且页面HTML请求不受本配置的影响。 |
 | `rules`      | array of object | 必填 | -   | 用户定义不同的灰度规则，适配不同的灰度场景   |
-| `rewrite`      | object | 必填 | -   | 重写配置，一般用于OSS/CDN前端部署的重写配置  |
+| `rewrite`      | object | 非必填 | -   | 重写配置，一般用于OSS/CDN前端部署的重写配置  |
 | `baseDeployment` | object   | 非必填 | -   | 配置Base基线规则的配置    |
 | `grayDeployments` |  array of object   | 非必填 | -   | 配置Gray灰度的生效规则，以及生效版本                                |
 | `backendGrayTag`     | string       | 非必填  | `x-mse-tag`   | 后端灰度版本Tag，如果配置了，cookie中将携带值为`${backendGrayTag}:${grayDeployments[].backendVersion}` |
