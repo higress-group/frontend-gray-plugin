@@ -61,18 +61,18 @@ description: 前端灰度插件配置参考
 | 名称             | 数据类型         | 填写要求 | 默认值 | 描述                                                                                |
 |----------------|--------------|------|-----|-----------------------------------------------------------------------------------|
 | `version`         | string       | 必填   | -   | Base版本的版本号，作为兜底的版本 |
-| `backendVersion`  | string | 必填   | -   | 后端灰度版本，配合`key`为`${backendGrayTag}`，写入cookie中 |
-| `versionPredicates`  | string | 必填   | -   | 和`version`含义相同，但是满足多版本的需求：根据不同路由映射不同的`Version`版本。一般用于微前端的场景：一个主应用需要管理多个微应用 |
+| `backendVersion`  | string |  非必填   | -   | 后端灰度版本，配合`key`为`${backendGrayTag}`，写入cookie中 |
+| `versionPredicates`  | string | 非必填   | -   | 和`version`含义相同，但是满足多版本的需求：根据不同路由映射不同的`Version`版本。一般用于微前端的场景：一个主应用需要管理多个微应用 |
 
 `grayDeployments`字段配置说明：
 
 | 名称     | 数据类型   | 填写要求 | 默认值 | 描述                                              |
 |--------|--------|------|-----|-------------------------------------------------|
 | `version`  | string | 必填   | -   | Gray版本的版本号，如果命中灰度规则，则使用此版本。如果是非CDN部署，在header添加`x-higress-tag` |
-| `versionPredicates`  | string | 必填   | -   | 和`version`含义相同，但是满足多版本的需求：根据不同路由映射不同的`Version`版本。一般用于微前端的场景：一个主应用需要管理多个微应用 |
-| `backendVersion`  | string | 必填   | -   | 后端灰度版本，配合`key`为`${backendGrayTag}`，写入cookie中 |
+| `versionPredicates`  | string | 非必填   | -   | 和`version`含义相同，但是满足多版本的需求：根据不同路由映射不同的`Version`版本。一般用于微前端的场景：一个主应用需要管理多个微应用 |
+| `backendVersion`  | string | 非必填   | -   | 后端灰度版本，配合`key`为`${backendGrayTag}`，写入cookie中 |
 | `name` | string | 必填   | -   | 规则名称和`rules[].name`关联 |
-| `enabled`  | boolean   | 必填   | -   | 是否启动当前灰度规则                                      |
+| `enabled`  | boolean   | 非必填   | -   | 是否启动当前灰度规则                                      |
 | `weight`  | int   | 非必填   | -   | 按照比例灰度，比如50。 |
 >按照比例灰度注意下面几点:
 > 1. 如果同一个规则同时配置了`按用户灰度`以及`按比例灰度`，按`比例灰度`优先生效
