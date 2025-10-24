@@ -9,7 +9,7 @@ The `frontend-gray` plugin implements frontend user grayscale capabilities. This
 ## Runtime Properties
 
 Execution Stage: `Default Stage`  
-Execution Priority: `1000`
+Execution Priority: `450`
 
 ## Configuration Fields
 | Name | Data Type | Required | Default | Description |
